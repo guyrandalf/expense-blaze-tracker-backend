@@ -37,7 +37,7 @@ export const GET = withAuth(async (req: Request, userId: string) => {
     return NextResponse.json({
       budget,
       totalExpenses,
-      difference: budget ? budget.amount - totalExpenses : null,
+      difference: budget ? (budget.expectedIncome ?? 0) - totalExpenses : null,
     });
   } catch (error) {
     console.error("Error fetching budget analysis:", error);
