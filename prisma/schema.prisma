@@ -1,0 +1,96 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  firstName String?
+  lastName  String?
+  password  String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Income    Income[]
+  Expense   Expense[]
+  Budget    Budget[]
+}
+
+model Income {
+  id          String   @id @default(cuid())
+  userId      String
+  amount      Float
+  source      String?
+  isRecurring Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Expense {
+  id                 String    @id @default(cuid())
+  userId             String
+  amount             Float
+  name               String?
+  isRecurring        Boolean   @default(false)
+  recurrenceInterval String? // e.g., 'monthly', 'weekly', etc.
+  startDate          DateTime? // When recurrence starts
+  endDate            DateTime? // When recurrence ends (optional)
+  expenseDate        DateTime? // The date of the expense (for one-time or generated recurrences)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id])
+  reimbursements Reimbursement[] // New relation
+}
+
+model Reimbursement {
+  id        String   @id @default(cuid())
+  expenseId String
+  amount    Float
+  date      DateTime
+  note      String?
+  status    String // e.g., 'partial', 'complete'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  expense Expense @relation(fields: [expenseId], references: [id])
+}
+
+model Budget {
+  id             String   @id @default(cuid())
+  userId         String
+  month          Int // 1-12
+  year           Int
+  expectedIncome Float? // User's expected income for the month
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user  User         @relation(fields: [userId], references: [id])
+  items BudgetItem[]
+
+  @@unique([userId, month, year])
+}
+
+model BudgetItem {
+  id              String   @id @default(cuid())
+  budgetId        String
+  category        String
+  estimatedAmount Float
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  budget Budget @relation(fields: [budgetId], references: [id])
+}
